@@ -159,24 +159,27 @@ func (r *ClusterGroupUpgradeReconciler) processMonitoredObjects(
 		if clusterProgress.State != ranv1alpha1.InProgress {
 			continue
 		}
-		managedPolicyName := clusterGroupUpgrade.Status.ManagedPoliciesForUpgrade[*clusterProgress.PolicyIndex].Name
-		_, ok := clusterGroupUpgrade.Status.ManagedPoliciesContent[managedPolicyName]
-		if !ok {
-			// Current policy for this cluster doesn't contain any monitored object for processing, continue on to the next cluster
-			continue
-		}
 
-		// If there is content saved for the current managed policy, retrieve it.
-		monitoredObjects := []ConfigurationObject{}
-		json.Unmarshal([]byte(clusterGroupUpgrade.Status.ManagedPoliciesContent[managedPolicyName]), &monitoredObjects)
+		for _, policy := range clusterGroupUpgrade.Status.ManagedPoliciesForUpgrade {
 
-		for _, object := range monitoredObjects {
-			sooner, err := r.processMonitoredObject(ctx, clusterGroupUpgrade, object, clusterName)
-			if err != nil {
-				return reconcileSooner, err
+			_, ok := clusterGroupUpgrade.Status.ManagedPoliciesContent[policy.Name]
+			if !ok {
+				// Current policy for this cluster doesn't contain any monitored object for processing, continue on to the next cluster
+				continue
 			}
-			if sooner {
-				reconcileSooner = true
+
+			// If there is content saved for the current managed policy, retrieve it.
+			monitoredObjects := []ConfigurationObject{}
+			json.Unmarshal([]byte(clusterGroupUpgrade.Status.ManagedPoliciesContent[policy.Name]), &monitoredObjects)
+
+			for _, object := range monitoredObjects {
+				sooner, err := r.processMonitoredObject(ctx, clusterGroupUpgrade, object, clusterName)
+				if err != nil {
+					return reconcileSooner, err
+				}
+				if sooner {
+					reconcileSooner = true
+				}
 			}
 		}
 	}

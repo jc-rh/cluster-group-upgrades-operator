@@ -43,10 +43,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	ranv1alpha1 "github.com/openshift-kni/cluster-group-upgrades-operator/api/v1alpha1"
 	utils "github.com/openshift-kni/cluster-group-upgrades-operator/controllers/utils"
+	viewv1beta1 "github.com/stolostron/cluster-lifecycle-api/view/v1beta1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 )
 
@@ -816,20 +820,32 @@ func (r *ClusterGroupUpgradeReconciler) remediateCurrentBatch(
 
 func (r *ClusterGroupUpgradeReconciler) updatePlacementRules(ctx context.Context, clusterGroupUpgrade *ranv1alpha1.ClusterGroupUpgrade) error {
 
-	policiesToUpdate := make(map[int][]string)
-	for clusterName, clusterProgress := range clusterGroupUpgrade.Status.Status.CurrentBatchRemediationProgress {
-		if clusterProgress.State != ranv1alpha1.InProgress {
-			continue
-		}
-		clusterNames := policiesToUpdate[*clusterProgress.PolicyIndex]
-		clusterNames = append(clusterNames, clusterName)
-		policiesToUpdate[*clusterProgress.PolicyIndex] = clusterNames
-	}
+	// policiesToUpdate := make(map[int][]string)
+	// for clusterName, clusterProgress := range clusterGroupUpgrade.Status.Status.CurrentBatchRemediationProgress {
+	// 	if clusterProgress.State != ranv1alpha1.InProgress {
+	// 		continue
+	// 	}
+	// 	clusterNames := policiesToUpdate[*clusterProgress.PolicyIndex]
+	// 	clusterNames = append(clusterNames, clusterName)
+	// 	policiesToUpdate[*clusterProgress.PolicyIndex] = clusterNames
+	// }
 
-	for index, clusterNames := range policiesToUpdate {
-		placementRuleName := utils.GetResourceName(clusterGroupUpgrade, clusterGroupUpgrade.Status.ManagedPoliciesForUpgrade[index].Name+"-placement")
+	// for index, clusterNames := range policiesToUpdate {
+	// 	placementRuleName := utils.GetResourceName(clusterGroupUpgrade, clusterGroupUpgrade.Status.ManagedPoliciesForUpgrade[index].Name+"-placement")
+	// 	if safeName, ok := clusterGroupUpgrade.Status.SafeResourceNames[placementRuleName]; ok {
+	// 		err := r.updatePlacementRuleWithClusters(ctx, clusterGroupUpgrade, clusterNames, safeName)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 	} else {
+	// 		return fmt.Errorf("placement object name %s not found in CGU %s", placementRuleName, clusterGroupUpgrade.Name)
+	// 	}
+	// }
+
+	for _, policy := range clusterGroupUpgrade.Status.ManagedPoliciesForUpgrade {
+		placementRuleName := utils.GetResourceName(clusterGroupUpgrade, policy.Name+"-placement")
 		if safeName, ok := clusterGroupUpgrade.Status.SafeResourceNames[placementRuleName]; ok {
-			err := r.updatePlacementRuleWithClusters(ctx, clusterGroupUpgrade, clusterNames, safeName)
+			err := r.updatePlacementRuleWithClusters(ctx, clusterGroupUpgrade, clusterGroupUpgrade.Status.RemediationPlan[clusterGroupUpgrade.Status.Status.CurrentBatch-1], safeName)
 			if err != nil {
 				return err
 			}
@@ -2105,6 +2121,18 @@ func (r *ClusterGroupUpgradeReconciler) getCGUControllerWorkerCount() (count int
 	return
 }
 
+func (r *ClusterGroupUpgradeReconciler) managedClusterViewMapper(managedClusterView client.Object) []reconcile.Request {
+	reqs := make([]reconcile.Request, 0)
+	value, exists := managedClusterView.GetLabels()["openshift-cluster-group-upgrades/clusterGroupUpgrade"]
+	if exists {
+		i := strings.LastIndex(value, "-")
+		if i > 0 {
+			reqs = append(reqs, reconcile.Request{NamespacedName: types.NamespacedName{Namespace: value[:i], Name: value[i+1:]}})
+		}
+	}
+	return reqs
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *ClusterGroupUpgradeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Recorder = mgr.GetEventRecorderFor("ClusterGroupUpgrade")
@@ -2157,6 +2185,17 @@ func (r *ClusterGroupUpgradeReconciler) SetupWithManager(mgr ctrl.Manager) error
 			GenericFunc: func(ge event.GenericEvent) bool { return false },
 			DeleteFunc:  func(de event.DeleteEvent) bool { return false },
 		})).
+		Watches(
+			&source.Kind{Type: &viewv1beta1.ManagedClusterView{}},
+			handler.EnqueueRequestsFromMapFunc(r.managedClusterViewMapper),
+			builder.WithPredicates(predicate.Funcs{
+				UpdateFunc: func(e event.UpdateEvent) bool {
+					return e.ObjectOld.GetGeneration() == e.ObjectNew.GetGeneration()
+				},
+				CreateFunc:  func(ce event.CreateEvent) bool { return false },
+				GenericFunc: func(ge event.GenericEvent) bool { return false },
+				DeleteFunc:  func(de event.DeleteEvent) bool { return false },
+			})).
 		WithOptions(controller.Options{MaxConcurrentReconciles: r.getCGUControllerWorkerCount()}).
 		Complete(r)
 }

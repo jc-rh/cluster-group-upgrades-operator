@@ -292,10 +292,39 @@ func (r *ManagedClusterForCguReconciler) SetupWithManager(mgr ctrl.Manager) erro
 				UpdateFunc: func(e event.UpdateEvent) bool {
 					// Check if the event was deleting the label "ztp-done"
 					// We want to return true for that event only, and false for everything else
-					_, labelExistsInOld := e.ObjectOld.GetLabels()[ztpDoneLabel]
-					_, labelExistsInNew := e.ObjectNew.GetLabels()[ztpDoneLabel]
+					_, doneLabelExistsInOld := e.ObjectOld.GetLabels()[ztpDoneLabel]
+					_, doneLabelExistsInNew := e.ObjectNew.GetLabels()[ztpDoneLabel]
 
-					return labelExistsInOld && !labelExistsInNew
+					doneLabelRemoved := doneLabelExistsInOld && !doneLabelExistsInNew
+
+					// const policyControllerLabel = "feature.open-cluster-management.io/addon-config-policy-controller"
+					// const policyFrameworkLabel = "feature.open-cluster-management.io/addon-governance-policy-framework"
+					// const addonManagerLabel = "feature.open-cluster-management.io/addon-work-manager"
+
+					// const available = "available"
+
+					// pcLabelValue, _ := e.ObjectOld.GetLabels()[policyControllerLabel]
+					// pfLabelValue, _ := e.ObjectOld.GetLabels()[policyFrameworkLabel]
+					// afLabelValue, _ := e.ObjectOld.GetLabels()[addonManagerLabel]
+
+					// availableInOld := pcLabelValue == available && pfLabelValue == available && afLabelValue == available
+
+					// pcLabelValue, _ = e.ObjectNew.GetLabels()[policyControllerLabel]
+					// pfLabelValue, _ = e.ObjectNew.GetLabels()[policyFrameworkLabel]
+					// afLabelValue, _ = e.ObjectNew.GetLabels()[addonManagerLabel]
+
+					// availableInNew := pcLabelValue == available && pfLabelValue == available && afLabelValue == available
+
+					var availableInNew, availableInOld bool
+					availableCondition := meta.FindStatusCondition(e.ObjectOld.(*clusterv1.ManagedCluster).Status.Conditions, clusterv1.ManagedClusterConditionAvailable)
+					if availableCondition != nil && availableCondition.Status == metav1.ConditionTrue {
+						availableInOld = true
+					}
+					availableCondition = meta.FindStatusCondition(e.ObjectNew.(*clusterv1.ManagedCluster).Status.Conditions, clusterv1.ManagedClusterConditionAvailable)
+					if availableCondition != nil && availableCondition.Status == metav1.ConditionTrue {
+						availableInNew = true
+					}
+					return (doneLabelRemoved && availableInNew) || (!availableInOld && availableInNew && !doneLabelExistsInNew)
 				},
 			})).
 		Owns(&ranv1alpha1.ClusterGroupUpgrade{},
