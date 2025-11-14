@@ -28,8 +28,10 @@ func (r *ClusterGroupUpgradeReconciler) updatePlacementRules(ctx context.Context
 		if clusterProgress.State != ranv1alpha1.InProgress {
 			continue
 		}
+		//nolint:staticcheck // SA1019 deprecated field used for backward compatibility
 		clusterNames := policiesToUpdate[*clusterProgress.PolicyIndex]
 		clusterNames = append(clusterNames, clusterName)
+		//nolint:staticcheck // SA1019 deprecated field used for backward compatibility
 		policiesToUpdate[*clusterProgress.PolicyIndex] = clusterNames
 	}
 
@@ -469,11 +471,13 @@ func (r *ClusterGroupUpgradeReconciler) getNextNonCompliantPolicyForCluster(
 
 func (r *ClusterGroupUpgradeReconciler) handlePolicyTimeoutForCluster(clusterGroupUpgrade *ranv1alpha1.ClusterGroupUpgrade, clusterName string, clusterState *ranv1alpha1.ClusterState) {
 	clusterProgress := clusterGroupUpgrade.Status.Status.CurrentBatchRemediationProgress[clusterName]
+	//nolint:staticcheck // SA1019 deprecated field used for backward compatibility
 	if clusterProgress.PolicyIndex == nil {
 		r.Log.Info("[addClustsersStatusOnTimeout] Missing index for cluster", "clusterName", clusterName, "clusterProgress", clusterProgress)
 		return
 	}
 
+	//nolint:staticcheck // SA1019 deprecated field used for backward compatibility
 	policyIndex := *clusterProgress.PolicyIndex
 	// Avoid panics because of index out of bound in edge cases
 	if policyIndex < len(clusterGroupUpgrade.Status.ManagedPoliciesForUpgrade) {

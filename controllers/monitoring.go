@@ -179,6 +179,7 @@ func (r *ClusterGroupUpgradeReconciler) processMonitoredObjects(
 		if clusterProgress.State != ranv1alpha1.InProgress {
 			continue
 		}
+		//nolint:staticcheck // SA1019 deprecated field used for backward compatibility
 		managedPolicyName := clusterGroupUpgrade.Status.ManagedPoliciesForUpgrade[*clusterProgress.PolicyIndex].Name
 		_, ok := clusterGroupUpgrade.Status.ManagedPoliciesContent[managedPolicyName]
 		if !ok {

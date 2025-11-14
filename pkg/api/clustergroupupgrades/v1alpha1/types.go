@@ -215,7 +215,7 @@ var RolloutTypes = struct {
 func (cgu ClusterGroupUpgrade) RolloutType() RolloutType {
 	hasPolicies := len(cgu.Spec.ManagedPolicies) > 0
 	hasManifestWorks := len(cgu.Spec.ManifestWorkTemplates) > 0
-	
+
 	if hasPolicies && hasManifestWorks {
 		return RolloutTypes.Mixed
 	} else if hasManifestWorks {
@@ -227,22 +227,22 @@ func (cgu ClusterGroupUpgrade) RolloutType() RolloutType {
 
 // RemediationItem defines a single remediation step (policy or manifest work)
 type RemediationItem struct {
-	Type      string `json:"type"`                 // "Policy" or "ManifestWork"
-	Name      string `json:"name"`                 // Policy name or MW template name
-	Namespace string `json:"namespace,omitempty"`  // For policies only
+	Type      string `json:"type"`                // "Policy" or "ManifestWork"
+	Name      string `json:"name"`                // Policy name or MW template name
+	Namespace string `json:"namespace,omitempty"` // For policies only
 }
 
 // ClusterRemediationProgress stores the remediation progress of a cluster
 type ClusterRemediationProgress struct {
 	// State should be one of the following: NotStarted, InProgress, Completed
-	State             string      `json:"state,omitempty"`
+	State string `json:"state,omitempty"`
 	// ItemIndex is the index in the unified RemediationItems list (for mixed mode)
-	ItemIndex         *int        `json:"itemIndex,omitempty"`
-	FirstCompliantAt  metav1.Time `json:"firstCompliantAt,omitempty"`
+	ItemIndex        *int        `json:"itemIndex,omitempty"`
+	FirstCompliantAt metav1.Time `json:"firstCompliantAt,omitempty"`
 	// Deprecated: Use ItemIndex instead
-	ManifestWorkIndex *int        `json:"manifestWorkIndex,omitempty"`
+	ManifestWorkIndex *int `json:"manifestWorkIndex,omitempty"`
 	// Deprecated: Use ItemIndex instead
-	PolicyIndex       *int        `json:"policyIndex,omitempty"`
+	PolicyIndex *int `json:"policyIndex,omitempty"`
 }
 
 // ClusterRemediationProgress possible states

@@ -231,11 +231,14 @@ func (r *IBGUReconciler) syncStatusWithCGUs(ctx context.Context, ibgu *ibguv1alp
 			if _, exist := m[clusterName]; !exist {
 				m[clusterName] = &ibguv1alpha1.ClusterState{Name: clusterName}
 			}
+			//nolint:staticcheck // SA1019 deprecated field used for backward compatibility
 			if progress.ManifestWorkIndex != nil {
 				m[clusterName].CurrentAction = &ibguv1alpha1.ActionMessage{
+					//nolint:staticcheck // SA1019 deprecated field used for backward compatibility
 					Action: utils.GetActionFromMWRSName(cgu.Spec.ManifestWorkTemplates[*progress.ManifestWorkIndex]),
 				}
 				m[clusterName].CompletedActions = append(m[clusterName].CompletedActions,
+					//nolint:staticcheck // SA1019 deprecated field used for backward compatibility
 					utils.GetFirstNActionMessagesFromCGU(&cgu, *progress.ManifestWorkIndex)...)
 			}
 		}

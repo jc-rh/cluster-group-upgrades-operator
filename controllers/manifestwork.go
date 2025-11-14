@@ -64,6 +64,7 @@ func (r *ClusterGroupUpgradeReconciler) updateManifestWorkForCurrentBatch(
 		if clusterProgress.State == ranv1alpha1.Completed {
 			continue
 		}
+		//nolint:staticcheck // SA1019 deprecated field used for backward compatibility
 		currentIndex := *clusterProgress.ManifestWorkIndex
 		if currentIndex > 0 {
 			_, err := utils.GetManifestWorkForCluster(ctx, r.Client, clusterGroupUpgrade, currentIndex-1, clusterName)
@@ -89,11 +90,13 @@ func (r *ClusterGroupUpgradeReconciler) updateManifestWorkForCurrentBatch(
 func (r *ClusterGroupUpgradeReconciler) handleManifestWorkTimeoutForCluster(ctx context.Context, clusterGroupUpgrade *ranv1alpha1.ClusterGroupUpgrade,
 	clusterName string, clusterState *ranv1alpha1.ClusterState) error {
 	clusterProgress := clusterGroupUpgrade.Status.Status.CurrentBatchRemediationProgress[clusterName]
+	//nolint:staticcheck // SA1019 deprecated field used for backward compatibility
 	if clusterProgress.ManifestWorkIndex == nil {
 		r.Log.Info("[handleManifestWorkTimeoutForCluster] Missing index for cluster", "clusterName", clusterName, "clusterProgress", clusterProgress)
 		return nil
 	}
 
+	//nolint:staticcheck // SA1019 deprecated field used for backward compatibility
 	index := *clusterProgress.ManifestWorkIndex
 	// Avoid panics because of index out of bound in edge cases
 	if index < len(clusterGroupUpgrade.Spec.ManifestWorkTemplates) {

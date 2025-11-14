@@ -212,6 +212,7 @@ func TestSyncStatusWithCGUs(t *testing.T) {
 						Status: v1alpha1.UpgradeStatus{
 							CurrentBatchRemediationProgress: map[string]*v1alpha1.ClusterRemediationProgress{
 								"spoke1": {
+									//nolint:staticcheck // SA1019 deprecated field used in test for backward compatibility
 									ManifestWorkIndex: new(int),
 									State:             "InProgress",
 								},
@@ -248,6 +249,7 @@ func TestSyncStatusWithCGUs(t *testing.T) {
 						Status: v1alpha1.UpgradeStatus{
 							CurrentBatchRemediationProgress: map[string]*v1alpha1.ClusterRemediationProgress{
 								"spoke6": {
+									//nolint:staticcheck // SA1019 deprecated field used in test for backward compatibility
 									ManifestWorkIndex: new(int),
 									State:             "InProgress",
 								},
@@ -291,6 +293,7 @@ func TestSyncStatusWithCGUs(t *testing.T) {
 						Status: v1alpha1.UpgradeStatus{
 							CurrentBatchRemediationProgress: map[string]*v1alpha1.ClusterRemediationProgress{
 								"spoke6": {
+									//nolint:staticcheck // SA1019 deprecated field used in test for backward compatibility
 									ManifestWorkIndex: &two,
 									State:             "InProgress",
 								},

@@ -254,7 +254,7 @@ func (r *ClusterGroupUpgradeReconciler) Reconcile(ctx context.Context, req ctrl.
 				err = r.updateStatus(ctx, clusterGroupUpgrade)
 				return
 			}
-			
+
 			// Validate mixed mode configuration
 			err = r.validateMixedMode(clusterGroupUpgrade)
 			if err != nil {
@@ -868,7 +868,7 @@ func (r *ClusterGroupUpgradeReconciler) updateClusterProgress(
 
 	var index **int
 	var size int
-	
+
 	// Handle mixed mode with unified item tracking
 	if clusterGroupUpgrade.RolloutType() == ranv1alpha1.RolloutTypes.Mixed {
 		// Migrate legacy progress to ItemIndex if needed
@@ -883,9 +883,11 @@ func (r *ClusterGroupUpgradeReconciler) updateClusterProgress(
 		// Legacy modes
 		switch clusterGroupUpgrade.RolloutType() {
 		case ranv1alpha1.RolloutTypes.Policy:
+			//nolint:staticcheck // SA1019 deprecated field used for backward compatibility
 			index = &clusterGroupUpgrade.Status.Status.CurrentBatchRemediationProgress[clusterName].PolicyIndex
 			size = len(clusterGroupUpgrade.Status.ManagedPoliciesForUpgrade)
 		default:
+			//nolint:staticcheck // SA1019 deprecated field used for backward compatibility
 			index = &clusterGroupUpgrade.Status.Status.CurrentBatchRemediationProgress[clusterName].ManifestWorkIndex
 			size = len(clusterGroupUpgrade.Spec.ManifestWorkTemplates)
 		}
@@ -909,7 +911,9 @@ func (r *ClusterGroupUpgradeReconciler) updateClusterProgress(
 	isProgressing := currentIndex > **index
 	if currentIndex >= size {
 		// Clear all progress indices on completion
+		//nolint:staticcheck // SA1019 deprecated field cleared for backward compatibility
 		clusterGroupUpgrade.Status.Status.CurrentBatchRemediationProgress[clusterName].PolicyIndex = nil
+		//nolint:staticcheck // SA1019 deprecated field cleared for backward compatibility
 		clusterGroupUpgrade.Status.Status.CurrentBatchRemediationProgress[clusterName].ManifestWorkIndex = nil
 		clusterGroupUpgrade.Status.Status.CurrentBatchRemediationProgress[clusterName].ItemIndex = nil
 		*clusterProgressState = ranv1alpha1.Completed
@@ -933,12 +937,12 @@ func (r *ClusterGroupUpgradeReconciler) updateClusterProgress(
 
 func (r *ClusterGroupUpgradeReconciler) getClusterProgress(
 	ctx context.Context, clusterGroupUpgrade *ranv1alpha1.ClusterGroupUpgrade, clusterName string, startIndex int) (int, bool, error) {
-	
+
 	// Handle mixed mode with unified item tracking
 	if clusterGroupUpgrade.RolloutType() == ranv1alpha1.RolloutTypes.Mixed {
 		return r.getClusterProgressMixed(ctx, clusterGroupUpgrade, clusterName, startIndex)
 	}
-	
+
 	// Legacy modes
 	switch clusterGroupUpgrade.RolloutType() {
 	case ranv1alpha1.RolloutTypes.Policy:
@@ -950,20 +954,20 @@ func (r *ClusterGroupUpgradeReconciler) getClusterProgress(
 
 func (r *ClusterGroupUpgradeReconciler) getClusterProgressMixed(
 	ctx context.Context, clusterGroupUpgrade *ranv1alpha1.ClusterGroupUpgrade, clusterName string, startIndex int) (int, bool, error) {
-	
+
 	items := clusterGroupUpgrade.Status.RemediationItems
 	if len(items) == 0 {
 		items = r.buildRemediationItems(clusterGroupUpgrade)
 		clusterGroupUpgrade.Status.RemediationItems = items
 	}
-	
+
 	for i := startIndex; i < len(items); i++ {
 		item := items[i]
-		
+
 		var isCompliant bool
 		var isSoaking bool
 		var err error
-		
+
 		switch item.Type {
 		case "Policy":
 			isCompliant, isSoaking, err = r.isPolicyCompliantForCluster(ctx, clusterGroupUpgrade, clusterName, item)
@@ -973,16 +977,16 @@ func (r *ClusterGroupUpgradeReconciler) getClusterProgressMixed(
 			r.Log.Info("Unknown remediation item type", "type", item.Type, "item", item)
 			continue
 		}
-		
+
 		if err != nil {
 			return i, false, err
 		}
-		
+
 		if !isCompliant {
 			return i, isSoaking, nil
 		}
 	}
-	
+
 	return len(items), false, nil // All items complete
 }
 
@@ -996,18 +1000,18 @@ func (r *ClusterGroupUpgradeReconciler) isPolicyCompliantForCluster(
 			break
 		}
 	}
-	
+
 	if policyIndex == -1 {
 		// Policy not found in managed policies for upgrade
 		return true, false, nil
 	}
-	
+
 	// Use existing policy compliance checking logic
 	nextIndex, isSoaking, err := r.getNextNonCompliantPolicyForCluster(ctx, clusterGroupUpgrade, clusterName, policyIndex, nil)
 	if err != nil {
 		return false, false, err
 	}
-	
+
 	// If nextIndex is greater than current policy index, the policy is compliant
 	return nextIndex > policyIndex, isSoaking, nil
 }
@@ -1022,40 +1026,46 @@ func (r *ClusterGroupUpgradeReconciler) isManifestWorkCompliantForCluster(
 			break
 		}
 	}
-	
+
 	if templateIndex == -1 {
 		// Template not found
 		return true, false, nil
 	}
-	
+
 	// Use existing manifest work compliance checking logic
 	nextIndex, isSoaking, err := r.getNextManifestWorkForCluster(ctx, clusterGroupUpgrade, clusterName, templateIndex)
 	if err != nil {
 		return false, false, err
 	}
-	
+
 	// If nextIndex is greater than current template index, the manifest work is compliant
 	return nextIndex > templateIndex, isSoaking, nil
 }
 
 func (r *ClusterGroupUpgradeReconciler) migrateClusterProgress(
 	clusterGroupUpgrade *ranv1alpha1.ClusterGroupUpgrade, clusterName string) {
-	
+
 	progress := clusterGroupUpgrade.Status.Status.CurrentBatchRemediationProgress[clusterName]
-	
+
 	if progress.ItemIndex != nil {
 		return // Already migrated
 	}
-	
+
 	// Migrate from old index format
+	//nolint:staticcheck // SA1019 deprecated field accessed for migration
 	if progress.PolicyIndex != nil {
+		//nolint:staticcheck // SA1019 deprecated field accessed for migration
 		progress.ItemIndex = progress.PolicyIndex
+		//nolint:staticcheck // SA1019 deprecated field cleared after migration
 		progress.PolicyIndex = nil
+		//nolint:staticcheck // SA1019 deprecated field accessed for migration
 	} else if progress.ManifestWorkIndex != nil {
 		// Calculate offset for manifest work items
 		policyCount := len(clusterGroupUpgrade.Status.ManagedPoliciesForUpgrade)
+		//nolint:staticcheck // SA1019 deprecated field accessed for migration
 		itemIndex := policyCount + *progress.ManifestWorkIndex
 		progress.ItemIndex = &itemIndex
+		//nolint:staticcheck // SA1019 deprecated field cleared after migration
 		progress.ManifestWorkIndex = nil
 	}
 }
@@ -1155,14 +1165,14 @@ func (r *ClusterGroupUpgradeReconciler) performAfterCompletionActions(
 
 func (r *ClusterGroupUpgradeReconciler) buildRemediationItems(
 	clusterGroupUpgrade *ranv1alpha1.ClusterGroupUpgrade) []ranv1alpha1.RemediationItem {
-	
+
 	var items []ranv1alpha1.RemediationItem
-	
+
 	// Use explicit order if specified
 	if len(clusterGroupUpgrade.Spec.RemediationOrder) > 0 {
 		return clusterGroupUpgrade.Spec.RemediationOrder
 	}
-	
+
 	// Default: policies first, then manifest works
 	for _, policy := range clusterGroupUpgrade.Status.ManagedPoliciesForUpgrade {
 		items = append(items, ranv1alpha1.RemediationItem{
@@ -1171,14 +1181,14 @@ func (r *ClusterGroupUpgradeReconciler) buildRemediationItems(
 			Namespace: policy.Namespace,
 		})
 	}
-	
+
 	for _, mwTemplate := range clusterGroupUpgrade.Spec.ManifestWorkTemplates {
 		items = append(items, ranv1alpha1.RemediationItem{
 			Type: "ManifestWork",
 			Name: mwTemplate,
 		})
 	}
-	
+
 	return items
 }
 
@@ -1186,12 +1196,12 @@ func (r *ClusterGroupUpgradeReconciler) buildRemediationPlan(
 	clusterGroupUpgrade *ranv1alpha1.ClusterGroupUpgrade, clusters []string, managedPolicies []*unstructured.Unstructured) []string {
 	var clusterMap map[string]bool
 	compliantClusters := []string{}
-	
+
 	// Build remediation items if not already set
 	if len(clusterGroupUpgrade.Status.RemediationItems) == 0 {
 		clusterGroupUpgrade.Status.RemediationItems = r.buildRemediationItems(clusterGroupUpgrade)
 	}
-	
+
 	// For mixed mode and manifest work mode, check if clusters need any remediation
 	if clusterGroupUpgrade.RolloutType() == ranv1alpha1.RolloutTypes.Mixed {
 		// For mixed mode, a cluster needs remediation if it's non-compliant with any policy
