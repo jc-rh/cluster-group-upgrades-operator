@@ -275,6 +275,7 @@ func (r *ClusterGroupUpgradeReconciler) validateRemediationOrder(
 	return nil
 }
 
+//nolint:unparam
 func (r *ClusterGroupUpgradeReconciler) policyExistsInManagedPolicies(
 	name, namespace string, clusterGroupUpgrade *ranv1alpha1.ClusterGroupUpgrade) bool {
 

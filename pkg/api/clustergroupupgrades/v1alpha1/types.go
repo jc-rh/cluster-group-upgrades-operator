@@ -215,7 +215,7 @@ var RolloutTypes = struct {
 func (cgu ClusterGroupUpgrade) RolloutType() RolloutType {
 	hasPolicies := len(cgu.Spec.ManagedPolicies) > 0
 	hasManifestWorks := len(cgu.Spec.ManifestWorkTemplates) > 0
-
+	//nolint:gocritic
 	if hasPolicies && hasManifestWorks {
 		return RolloutTypes.Mixed
 	} else if hasManifestWorks {

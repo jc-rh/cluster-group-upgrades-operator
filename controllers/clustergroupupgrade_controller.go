@@ -967,7 +967,7 @@ func (r *ClusterGroupUpgradeReconciler) getClusterProgressMixed(
 		var isCompliant bool
 		var isSoaking bool
 		var err error
-
+		//nolint:goconst
 		switch item.Type {
 		case "Policy":
 			isCompliant, isSoaking, err = r.isPolicyCompliantForCluster(ctx, clusterGroupUpgrade, clusterName, item)
@@ -1201,7 +1201,7 @@ func (r *ClusterGroupUpgradeReconciler) buildRemediationPlan(
 	if len(clusterGroupUpgrade.Status.RemediationItems) == 0 {
 		clusterGroupUpgrade.Status.RemediationItems = r.buildRemediationItems(clusterGroupUpgrade)
 	}
-
+	//nolint:gocritic
 	// For mixed mode and manifest work mode, check if clusters need any remediation
 	if clusterGroupUpgrade.RolloutType() == ranv1alpha1.RolloutTypes.Mixed {
 		// For mixed mode, a cluster needs remediation if it's non-compliant with any policy

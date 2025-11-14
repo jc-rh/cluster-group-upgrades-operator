@@ -170,6 +170,13 @@ spec:
         path: preCachingConfigRef
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
+      - description: |-
+          RemediationOrder defines custom ordering of policies and manifest work templates for mixed mode.
+          If not specified, policies are applied first, then manifest work templates in the order specified.
+        displayName: Remediation Order
+        path: remediationOrder
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
       - displayName: Remediation Strategy
         path: remediationStrategy
         x-descriptors:
@@ -206,6 +213,8 @@ spec:
         path: placementRules
       - displayName: Precaching
         path: precaching
+      - displayName: Remediation Items
+        path: remediationItems
       - displayName: Remediation Plan
         path: remediationPlan
       - displayName: Safe Resource Names

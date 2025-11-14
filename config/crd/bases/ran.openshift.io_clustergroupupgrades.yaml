@@ -287,6 +287,25 @@ spec:
                   namespace:
                     type: string
                 type: object
+              remediationOrder:
+                description: |-
+                  RemediationOrder defines custom ordering of policies and manifest work templates for mixed mode.
+                  If not specified, policies are applied first, then manifest work templates in the order specified.
+                items:
+                  description: RemediationItem defines a single remediation step (policy
+                    or manifest work)
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - name
+                  - type
+                  type: object
+                type: array
               remediationStrategy:
                 description: RemediationStrategySpec defines the remediation policy
                 properties:
@@ -304,28 +323,6 @@ spec:
                 required:
                 - maxConcurrency
                 type: object
-              remediationOrder:
-                description: |-
-                  RemediationOrder defines custom ordering of policies and manifest work templates for mixed mode.
-                  If not specified, policies are applied first, then manifest work templates in the order specified.
-                items:
-                  description: RemediationItem defines a single remediation step (policy
-                    or manifest work)
-                  properties:
-                    name:
-                      description: Policy name or MW template name
-                      type: string
-                    namespace:
-                      description: For policies only
-                      type: string
-                    type:
-                      description: '"Policy" or "ManifestWork"'
-                      type: string
-                  required:
-                  - name
-                  - type
-                  type: object
-                type: array
             required:
             - remediationStrategy
             type: object
@@ -720,30 +717,27 @@ spec:
                       type: string
                     type: object
                 type: object
-              remediationPlan:
-                items:
-                  items:
-                    type: string
-                  type: array
-                type: array
               remediationItems:
                 items:
                   description: RemediationItem defines a single remediation step (policy
                     or manifest work)
                   properties:
                     name:
-                      description: Policy name or MW template name
                       type: string
                     namespace:
-                      description: For policies only
                       type: string
                     type:
-                      description: '"Policy" or "ManifestWork"'
                       type: string
                   required:
                   - name
                   - type
                   type: object
+                type: array
+              remediationPlan:
+                items:
+                  items:
+                    type: string
+                  type: array
                 type: array
               safeResourceNames:
                 additionalProperties:
