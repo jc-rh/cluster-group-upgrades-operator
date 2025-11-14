@@ -29,6 +29,7 @@ type ClusterGroupUpgradeStatusApplyConfiguration struct {
 	CopiedPolicies                        []string                                    `json:"copiedPolicies,omitempty"`
 	Conditions                            []v1.Condition                              `json:"conditions,omitempty"`
 	RemediationPlan                       [][]string                                  `json:"remediationPlan,omitempty"`
+	RemediationItems                      []RemediationItemApplyConfiguration         `json:"remediationItems,omitempty"`
 	ManagedPoliciesNs                     map[string]string                           `json:"managedPoliciesNs,omitempty"`
 	SafeResourceNames                     map[string]string                           `json:"safeResourceNames,omitempty"`
 	ManagedPoliciesForUpgrade             []ManagedPolicyForUpgradeApplyConfiguration `json:"managedPoliciesForUpgrade,omitempty"`
@@ -93,6 +94,19 @@ func (b *ClusterGroupUpgradeStatusApplyConfiguration) WithConditions(values ...v
 func (b *ClusterGroupUpgradeStatusApplyConfiguration) WithRemediationPlan(values ...[]string) *ClusterGroupUpgradeStatusApplyConfiguration {
 	for i := range values {
 		b.RemediationPlan = append(b.RemediationPlan, values[i])
+	}
+	return b
+}
+
+// WithRemediationItems adds the given value to the RemediationItems field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the RemediationItems field.
+func (b *ClusterGroupUpgradeStatusApplyConfiguration) WithRemediationItems(values ...*RemediationItemApplyConfiguration) *ClusterGroupUpgradeStatusApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithRemediationItems")
+		}
+		b.RemediationItems = append(b.RemediationItems, *values[i])
 	}
 	return b
 }

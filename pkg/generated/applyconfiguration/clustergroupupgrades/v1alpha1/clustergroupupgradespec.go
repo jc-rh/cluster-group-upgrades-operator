@@ -37,6 +37,7 @@ type ClusterGroupUpgradeSpecApplyConfiguration struct {
 	BlockingCRs           []BlockingCRApplyConfiguration             `json:"blockingCRs,omitempty"`
 	Actions               *ActionsApplyConfiguration                 `json:"actions,omitempty"`
 	BatchTimeoutAction    *string                                    `json:"batchTimeoutAction,omitempty"`
+	RemediationOrder      []RemediationItemApplyConfiguration        `json:"remediationOrder,omitempty"`
 }
 
 // ClusterGroupUpgradeSpecApplyConfiguration constructs an declarative configuration of the ClusterGroupUpgradeSpec type for use with
@@ -161,5 +162,18 @@ func (b *ClusterGroupUpgradeSpecApplyConfiguration) WithActions(value *ActionsAp
 // If called multiple times, the BatchTimeoutAction field is set to the value of the last call.
 func (b *ClusterGroupUpgradeSpecApplyConfiguration) WithBatchTimeoutAction(value string) *ClusterGroupUpgradeSpecApplyConfiguration {
 	b.BatchTimeoutAction = &value
+	return b
+}
+
+// WithRemediationOrder adds the given value to the RemediationOrder field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the RemediationOrder field.
+func (b *ClusterGroupUpgradeSpecApplyConfiguration) WithRemediationOrder(values ...*RemediationItemApplyConfiguration) *ClusterGroupUpgradeSpecApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithRemediationOrder")
+		}
+		b.RemediationOrder = append(b.RemediationOrder, *values[i])
+	}
 	return b
 }

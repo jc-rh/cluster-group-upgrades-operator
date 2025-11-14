@@ -85,18 +85,21 @@ var ConditionReasons = struct {
 var InProgressMessages = map[ranv1alpha1.RolloutType]string{
 	ranv1alpha1.RolloutTypes.Policy:       "Remediating non-compliant policies",
 	ranv1alpha1.RolloutTypes.ManifestWork: "Rolling out manifestworks",
+	ranv1alpha1.RolloutTypes.Mixed:        "Rolling out policies and manifestworks",
 }
 
 // TimeoutMessages defines the timeout messages for the conditions by rollout type
 var TimeoutMessages = map[ranv1alpha1.RolloutType]string{
 	ranv1alpha1.RolloutTypes.Policy:       "Policy remediation took too long",
 	ranv1alpha1.RolloutTypes.ManifestWork: "Manifestwork rollout took too long",
+	ranv1alpha1.RolloutTypes.Mixed:        "Policy and manifestwork rollout took too long",
 }
 
 // CompletedMessages defines the completed messages for the conditions by rollout type
 var CompletedMessages = map[ranv1alpha1.RolloutType]string{
 	ranv1alpha1.RolloutTypes.Policy:       "All clusters are compliant with all the managed policies",
 	ranv1alpha1.RolloutTypes.ManifestWork: "All manifestworks rolled out successfully on all clusters",
+	ranv1alpha1.RolloutTypes.Mixed:        "All policies and manifestworks rolled out successfully on all clusters",
 }
 
 // SetStatusCondition is a convenience wrapper for meta.SetStatusCondition that takes in the types defined here and converts them to strings

@@ -217,3 +217,83 @@ func (r *ClusterGroupUpgradeReconciler) validatePoliciesDependenciesOrder(
 	}
 	return nil
 }
+
+func (r *ClusterGroupUpgradeReconciler) validateMixedMode(
+	clusterGroupUpgrade *ranv1alpha1.ClusterGroupUpgrade) error {
+	
+	if clusterGroupUpgrade.RolloutType() != ranv1alpha1.RolloutTypes.Mixed {
+		return nil
+	}
+	
+	// Validate remediation order if specified
+	if len(clusterGroupUpgrade.Spec.RemediationOrder) > 0 {
+		return r.validateRemediationOrder(clusterGroupUpgrade)
+	}
+	
+	return nil
+}
+
+func (r *ClusterGroupUpgradeReconciler) validateRemediationOrder(
+	clusterGroupUpgrade *ranv1alpha1.ClusterGroupUpgrade) error {
+	
+	for _, item := range clusterGroupUpgrade.Spec.RemediationOrder {
+		switch item.Type {
+		case "Policy":
+			if !r.policyExistsInManagedPolicies(item.Name, item.Namespace, clusterGroupUpgrade) {
+				utils.SetStatusCondition(
+					&clusterGroupUpgrade.Status.Conditions,
+					utils.ConditionTypes.Validated,
+					utils.ConditionReasons.NotAllManagedPoliciesExist,
+					metav1.ConditionFalse,
+					fmt.Sprintf("Policy %s/%s in remediation order not found in managedPolicies", item.Namespace, item.Name),
+				)
+				return fmt.Errorf("policy %s/%s not found in managedPolicies", item.Namespace, item.Name)
+			}
+		case "ManifestWork":
+			if !r.manifestWorkTemplateExists(item.Name, clusterGroupUpgrade) {
+				utils.SetStatusCondition(
+					&clusterGroupUpgrade.Status.Conditions,
+					utils.ConditionTypes.Validated,
+					utils.ConditionReasons.NotAllManifestTemplatesExist,
+					metav1.ConditionFalse,
+					fmt.Sprintf("Manifest work template %s in remediation order not found in manifestWorkTemplates", item.Name),
+				)
+				return fmt.Errorf("manifest work template %s not found in manifestWorkTemplates", item.Name)
+			}
+		default:
+			utils.SetStatusCondition(
+				&clusterGroupUpgrade.Status.Conditions,
+				utils.ConditionTypes.Validated,
+				utils.ConditionReasons.ValidationCompleted,
+				metav1.ConditionFalse,
+				fmt.Sprintf("Unknown remediation item type: %s", item.Type),
+			)
+			return fmt.Errorf("unknown remediation item type: %s", item.Type)
+		}
+	}
+	
+	return nil
+}
+
+func (r *ClusterGroupUpgradeReconciler) policyExistsInManagedPolicies(
+	name, namespace string, clusterGroupUpgrade *ranv1alpha1.ClusterGroupUpgrade) bool {
+	
+	for _, policy := range clusterGroupUpgrade.Spec.ManagedPolicies {
+		if policy == name {
+			// For simplicity, assume namespace matches the CGU namespace if not specified
+			return true
+		}
+	}
+	return false
+}
+
+func (r *ClusterGroupUpgradeReconciler) manifestWorkTemplateExists(
+	name string, clusterGroupUpgrade *ranv1alpha1.ClusterGroupUpgrade) bool {
+	
+	for _, template := range clusterGroupUpgrade.Spec.ManifestWorkTemplates {
+		if template == name {
+			return true
+		}
+	}
+	return false
+}

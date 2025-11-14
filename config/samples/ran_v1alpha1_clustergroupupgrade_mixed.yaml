@@ -1,0 +1,95 @@
+apiVersion: ran.openshift.io/v1alpha1
+kind: ClusterGroupUpgrade
+metadata:
+  name: mixed-upgrade-example
+  namespace: default
+spec:
+  # Cluster selection
+  clusters:
+    - spoke1
+    - spoke2
+    - spoke3
+  
+  # Remediation strategy
+  remediationStrategy:
+    maxConcurrency: 2
+    timeout: 360
+    canaries:
+      - spoke1
+
+  # Both policies and manifest work templates are specified (enables mixed mode)
+  managedPolicies:
+    - platform-upgrade-prep
+    - operator-subscriptions
+    - platform-upgrade
+    - post-upgrade-validation
+  
+  manifestWorkTemplates:
+    - pre-upgrade-backup
+    - custom-workload-pause
+    - custom-workload-resume
+    - post-upgrade-cleanup
+
+  # Custom ordering that interleaves policies and manifest works
+  remediationOrder:
+    # 1. First do backup via manifest work
+    - type: ManifestWork
+      name: pre-upgrade-backup
+    
+    # 2. Pause workloads before upgrade  
+    - type: ManifestWork
+      name: custom-workload-pause
+    
+    # 3. Apply prep policy
+    - type: Policy
+      name: platform-upgrade-prep
+      namespace: default
+    
+    # 4. Update operators first
+    - type: Policy
+      name: operator-subscriptions
+      namespace: default
+    
+    # 5. Do the actual platform upgrade
+    - type: Policy
+      name: platform-upgrade
+      namespace: default
+    
+    # 6. Resume workloads after upgrade
+    - type: ManifestWork
+      name: custom-workload-resume
+    
+    # 7. Validate the upgrade
+    - type: Policy
+      name: post-upgrade-validation
+      namespace: default
+    
+    # 8. Final cleanup
+    - type: ManifestWork
+      name: post-upgrade-cleanup
+
+  # Optional: Enable pre-caching for container images
+  preCaching: true
+  
+  # Actions to take before and after
+  actions:
+    beforeEnable:
+      addClusterLabels:
+        upgrade.openshift.io/status: "in-progress"
+      addClusterAnnotations:
+        upgrade.openshift.io/started-at: "{{.CurrentTime}}"
+    
+    afterCompletion:
+      addClusterLabels:
+        upgrade.openshift.io/status: "completed"
+        upgrade.openshift.io/version: "4.14.8"
+      removeClusterLabels:
+        - upgrade.openshift.io/status
+      addClusterAnnotations:
+        upgrade.openshift.io/completed-at: "{{.CurrentTime}}"
+
+  # Control when upgrade starts
+  enable: true
+  
+  # What to do if a batch times out
+  batchTimeoutAction: Continue

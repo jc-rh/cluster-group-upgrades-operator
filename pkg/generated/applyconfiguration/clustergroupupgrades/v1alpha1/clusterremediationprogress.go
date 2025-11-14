@@ -25,9 +25,10 @@ import (
 // with apply.
 type ClusterRemediationProgressApplyConfiguration struct {
 	State             *string  `json:"state,omitempty"`
+	ItemIndex         *int     `json:"itemIndex,omitempty"`
+	FirstCompliantAt  *v1.Time `json:"firstCompliantAt,omitempty"`
 	ManifestWorkIndex *int     `json:"manifestWorkIndex,omitempty"`
 	PolicyIndex       *int     `json:"policyIndex,omitempty"`
-	FirstCompliantAt  *v1.Time `json:"firstCompliantAt,omitempty"`
 }
 
 // ClusterRemediationProgressApplyConfiguration constructs an declarative configuration of the ClusterRemediationProgress type for use with
@@ -44,6 +45,22 @@ func (b *ClusterRemediationProgressApplyConfiguration) WithState(value string) *
 	return b
 }
 
+// WithItemIndex sets the ItemIndex field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ItemIndex field is set to the value of the last call.
+func (b *ClusterRemediationProgressApplyConfiguration) WithItemIndex(value int) *ClusterRemediationProgressApplyConfiguration {
+	b.ItemIndex = &value
+	return b
+}
+
+// WithFirstCompliantAt sets the FirstCompliantAt field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the FirstCompliantAt field is set to the value of the last call.
+func (b *ClusterRemediationProgressApplyConfiguration) WithFirstCompliantAt(value v1.Time) *ClusterRemediationProgressApplyConfiguration {
+	b.FirstCompliantAt = &value
+	return b
+}
+
 // WithManifestWorkIndex sets the ManifestWorkIndex field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ManifestWorkIndex field is set to the value of the last call.
@@ -57,13 +74,5 @@ func (b *ClusterRemediationProgressApplyConfiguration) WithManifestWorkIndex(val
 // If called multiple times, the PolicyIndex field is set to the value of the last call.
 func (b *ClusterRemediationProgressApplyConfiguration) WithPolicyIndex(value int) *ClusterRemediationProgressApplyConfiguration {
 	b.PolicyIndex = &value
-	return b
-}
-
-// WithFirstCompliantAt sets the FirstCompliantAt field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the FirstCompliantAt field is set to the value of the last call.
-func (b *ClusterRemediationProgressApplyConfiguration) WithFirstCompliantAt(value v1.Time) *ClusterRemediationProgressApplyConfiguration {
-	b.FirstCompliantAt = &value
 	return b
 }

@@ -191,6 +191,10 @@ type ClusterGroupUpgradeSpec struct {
 	//   - Abort
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="BatchTimeoutAction",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	BatchTimeoutAction string `json:"batchTimeoutAction,omitempty"`
+	// RemediationOrder defines custom ordering of policies and manifest work templates for mixed mode.
+	// If not specified, policies are applied first, then manifest work templates in the order specified.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Remediation Order",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
+	RemediationOrder []RemediationItem `json:"remediationOrder,omitempty"`
 }
 
 // RolloutType is a string representing the rollout type
@@ -200,26 +204,45 @@ type RolloutType string
 var RolloutTypes = struct {
 	ManifestWork RolloutType
 	Policy       RolloutType
+	Mixed        RolloutType
 }{
 	ManifestWork: "ManifestWork",
 	Policy:       "Policy",
+	Mixed:        "Mixed",
 }
 
 // RolloutType returns the rollout type based on the spec content
 func (cgu ClusterGroupUpgrade) RolloutType() RolloutType {
-	if len(cgu.Spec.ManifestWorkTemplates) > 0 {
+	hasPolicies := len(cgu.Spec.ManagedPolicies) > 0
+	hasManifestWorks := len(cgu.Spec.ManifestWorkTemplates) > 0
+	
+	if hasPolicies && hasManifestWorks {
+		return RolloutTypes.Mixed
+	} else if hasManifestWorks {
 		return RolloutTypes.ManifestWork
+	} else {
+		return RolloutTypes.Policy
 	}
-	return RolloutTypes.Policy
+}
+
+// RemediationItem defines a single remediation step (policy or manifest work)
+type RemediationItem struct {
+	Type      string `json:"type"`                 // "Policy" or "ManifestWork"
+	Name      string `json:"name"`                 // Policy name or MW template name
+	Namespace string `json:"namespace,omitempty"`  // For policies only
 }
 
 // ClusterRemediationProgress stores the remediation progress of a cluster
 type ClusterRemediationProgress struct {
 	// State should be one of the following: NotStarted, InProgress, Completed
 	State             string      `json:"state,omitempty"`
-	ManifestWorkIndex *int        `json:"manifestWorkIndex,omitempty"`
-	PolicyIndex       *int        `json:"policyIndex,omitempty"`
+	// ItemIndex is the index in the unified RemediationItems list (for mixed mode)
+	ItemIndex         *int        `json:"itemIndex,omitempty"`
 	FirstCompliantAt  metav1.Time `json:"firstCompliantAt,omitempty"`
+	// Deprecated: Use ItemIndex instead
+	ManifestWorkIndex *int        `json:"manifestWorkIndex,omitempty"`
+	// Deprecated: Use ItemIndex instead
+	PolicyIndex       *int        `json:"policyIndex,omitempty"`
 }
 
 // ClusterRemediationProgress possible states
@@ -306,6 +329,8 @@ type ClusterGroupUpgradeStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Remediation Plan"
 	RemediationPlan [][]string `json:"remediationPlan,omitempty"`
+	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Remediation Items"
+	RemediationItems []RemediationItem `json:"remediationItems,omitempty"`
 	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Managed Policies Namespace"
 	ManagedPoliciesNs map[string]string `json:"managedPoliciesNs,omitempty"`
 	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Safe Resource Names"

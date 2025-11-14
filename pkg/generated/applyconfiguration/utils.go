@@ -60,6 +60,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &clustergroupupgradesv1alpha1.PrecachingSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("PrecachingStatus"):
 		return &clustergroupupgradesv1alpha1.PrecachingStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("RemediationItem"):
+		return &clustergroupupgradesv1alpha1.RemediationItemApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RemediationStrategySpec"):
 		return &clustergroupupgradesv1alpha1.RemediationStrategySpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("UpgradeStatus"):
